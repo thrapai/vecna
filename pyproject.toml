@@ -1,0 +1,14 @@
+[project]
+name = "vecna"
+version = "0.1.0"
+description = "Vault for Encrypted Credentials and Note Access"
+authors = [{ name = "Thomas Rapai", email = "th.rapai@hotmail.com" }]
+requires-python = ">=3.11"
+dependencies = [
+    "typer",
+    "cryptography",
+    "pydantic"
+]
+
+[project.scripts]
+vecna = "vecna.main:app"
