@@ -296,3 +296,58 @@ def list_credentials() -> list[Credential]:
         raise ValueError("Failed to read vault contents.") from e
 
     return [Credential(**cred) for cred in vault_contents.values()]
+
+
+def delete_credential(
+    name: str,
+) -> bool:
+    """
+    Delete a credential from the vault by name.
+
+    This function removes the specified credential from the vault contents
+    and updates the vault file accordingly.
+
+    Args:
+        name (str): The name of the credential to delete
+
+    Returns:
+        bool: True if the credential was deleted, False if it was not found
+
+    Raises:
+        ValueError: If the vault is not unlocked or if there is an error reading/writing the vault
+    """
+    data = read_secure_file(VAULT_FILE)
+    nonce = data[16:28]
+    encrypted = data[28:]
+
+    key = read_secure_file(KEY_CACHE_FILE)
+    aesgcm = AESGCM(key)
+
+    try:
+        decrypted_data = aesgcm.decrypt(
+            nonce,
+            encrypted,
+            None,
+        )
+        vault_contents = json.loads(decrypted_data.decode())
+    except Exception as e:
+        raise ValueError("Failed to read vault contents.") from e
+
+    if name not in vault_contents:
+        return False
+
+    del vault_contents[name]
+
+    new_data = json.dumps(vault_contents).encode()
+    encrypted_new_data = aesgcm.encrypt(
+        nonce,
+        new_data,
+        None,
+    )
+
+    write_secure_file(
+        VAULT_FILE,
+        data[:16] + nonce + encrypted_new_data,
+    )
+
+    return True
