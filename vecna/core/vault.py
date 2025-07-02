@@ -173,3 +173,38 @@ def add_credential(credential: Credential):
     encrypted_new_data = aesgcm.encrypt(nonce, new_data, None)
     print("Added new data", new_data, "\n")
     write_secure_file(VAULT_FILE, salt + nonce + encrypted_new_data)
+
+
+def get_credential(name: str) -> Credential:
+    """
+    Retrieve a credential from the vault by name.
+
+    This function reads the vault contents, decrypts them, and returns the
+    specified credential as a Credential object.
+
+    Args:
+        name (str): The name of the credential to retrieve
+
+    Returns:
+        Credential: The requested credential object
+
+    Raises:
+        ValueError: If the vault is not unlocked or if the credential does not exist
+    """
+    data = read_secure_file(VAULT_FILE)
+    nonce = data[16:28]
+    encrypted = data[28:]
+
+    key = read_secure_file(KEY_CACHE_FILE)
+    aesgcm = AESGCM(key)
+
+    try:
+        decrypted_data = aesgcm.decrypt(nonce, encrypted, None)
+        vault_contents = json.loads(decrypted_data.decode())
+    except Exception as e:
+        raise ValueError("Failed to read vault contents.") from e
+
+    if name not in vault_contents:
+        raise ValueError(f"Credential '{name}' not found in vault.")
+
+    return Credential(**vault_contents[name])

@@ -58,7 +58,10 @@ def is_session_active() -> bool:
     Raises:
         FileNotFoundError: If the session file does not exist
     """
-    session_data = read_secure_file(SESSION_FILE)
+    try:
+        session_data = read_secure_file(SESSION_FILE)
+    except FileNotFoundError:
+        return False
 
     try:
         session = Session(**json.loads(session_data.decode()))
