@@ -13,3 +13,16 @@ dependencies = [
 
 [project.scripts]
 vecna = "vecna.main:app"
+
+[tool.isort]
+profile = "hug"
+multi_line_output = "3"
+force_grid_wrap = "2"
+lines_after_imports = "2"
+
+[tool.black]
+line-length = 100
+
+[tool.pylint.messages_control]
+output-format = "colorized"
+disable = ["C0114", "W0718", "C0415", "R0801"]

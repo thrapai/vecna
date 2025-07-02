@@ -1,4 +1,6 @@
-def copy_to_clipboard(text: str) -> bool:
+def copy_to_clipboard(
+    text: str,
+) -> bool:
     """
     Copies the given text to the system clipboard.
 
@@ -13,5 +15,5 @@ def copy_to_clipboard(text: str) -> bool:
 
         pyperclip.copy(text)
         return True
-    except Exception as e:
+    except Exception:
         return False

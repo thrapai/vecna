@@ -1,21 +1,30 @@
-from ..config import (
-    VECNA_DIR,
-    VAULT_FILE,
-    KEY_DERIVATION_ITERATIONS,
-    KEY_LENGTH,
-    KEY_CACHE_FILE,
-)
-from ..utils import read_secure_file, write_secure_file, delete_secure_file
-from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
+import json
+import os
+
+from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
-from cryptography.hazmat.backends import default_backend
+from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
+
+from ..config import (
+    KEY_CACHE_FILE,
+    KEY_DERIVATION_ITERATIONS,
+    KEY_LENGTH,
+    VAULT_FILE,
+    VECNA_DIR,
+)
 from ..models import Credential
-import os
-import json
+from ..utils import (
+    delete_secure_file,
+    read_secure_file,
+    write_secure_file,
+)
 
 
-def derive_key(password: bytes, salt: bytes) -> bytes:
+def derive_key(
+    password: bytes,
+    salt: bytes,
+) -> bytes:
     """
     Derives an encryption key from a password using PBKDF2.
 
@@ -51,7 +60,9 @@ def derive_key(password: bytes, salt: bytes) -> bytes:
     return kdf.derive(password)
 
 
-def create_vault(password: str):
+def create_vault(
+    password: str,
+):
     """
     Create a new vault encrypted with the provided password.
 
@@ -72,20 +83,31 @@ def create_vault(password: str):
         - Creates VECNA_DIR if it doesn't exist
         - Creates or overwrites the vault file at VAULT_FILE
     """
-    VECNA_DIR.mkdir(parents=True, exist_ok=True)
+    VECNA_DIR.mkdir(
+        parents=True,
+        exist_ok=True,
+    )
 
     salt = os.urandom(16)
     nonce = os.urandom(12)
-    key = derive_key(password.encode(), salt)
+    key = derive_key(
+        password.encode(),
+        salt,
+    )
 
     aesgcm = AESGCM(key)
     data = json.dumps({}).encode()
     encrypted = aesgcm.encrypt(nonce, data, None)
 
-    write_secure_file(VAULT_FILE, salt + nonce + encrypted)
+    write_secure_file(
+        VAULT_FILE,
+        salt + nonce + encrypted,
+    )
 
 
-def unlock_vault(password: str) -> dict:
+def unlock_vault(
+    password: str,
+) -> dict:
     """
     Attempts to unlock the vault using the provided password.
 
@@ -107,12 +129,22 @@ def unlock_vault(password: str) -> dict:
     nonce = data[16:28]
     encrypted = data[28:]
 
-    key = derive_key(password.encode(), salt)
+    key = derive_key(
+        password.encode(),
+        salt,
+    )
     aesgcm = AESGCM(key)
 
     try:
-        aesgcm.decrypt(nonce, encrypted, None)
-        write_secure_file(KEY_CACHE_FILE, key)
+        aesgcm.decrypt(
+            nonce,
+            encrypted,
+            None,
+        )
+        write_secure_file(
+            KEY_CACHE_FILE,
+            key,
+        )
     except Exception as e:
         raise ValueError("Failed to unlock vault. Check your password.") from e
 
@@ -135,7 +167,9 @@ def lock_vault():
         delete_secure_file(KEY_CACHE_FILE)
 
 
-def add_credential(credential: Credential):
+def add_credential(
+    credential: Credential,
+):
     """
     Add a new credential to the vault.
 
@@ -162,7 +196,11 @@ def add_credential(credential: Credential):
     aesgcm = AESGCM(key)
 
     try:
-        decrypted_data = aesgcm.decrypt(nonce, encrypted, None)
+        decrypted_data = aesgcm.decrypt(
+            nonce,
+            encrypted,
+            None,
+        )
         vault_contents = json.loads(decrypted_data.decode())
     except Exception as e:
         raise ValueError("Failed to read vault contents.") from e
@@ -170,12 +208,25 @@ def add_credential(credential: Credential):
     vault_contents[credential.name] = credential.model_dump()
 
     new_data = json.dumps(vault_contents).encode()
-    encrypted_new_data = aesgcm.encrypt(nonce, new_data, None)
-    print("Added new data", new_data, "\n")
-    write_secure_file(VAULT_FILE, salt + nonce + encrypted_new_data)
+    encrypted_new_data = aesgcm.encrypt(
+        nonce,
+        new_data,
+        None,
+    )
+    print(
+        "Added new data",
+        new_data,
+        "\n",
+    )
+    write_secure_file(
+        VAULT_FILE,
+        salt + nonce + encrypted_new_data,
+    )
 
 
-def get_credential(name: str) -> Credential:
+def get_credential(
+    name: str,
+) -> Credential:
     """
     Retrieve a credential from the vault by name.
 
@@ -199,7 +250,11 @@ def get_credential(name: str) -> Credential:
     aesgcm = AESGCM(key)
 
     try:
-        decrypted_data = aesgcm.decrypt(nonce, encrypted, None)
+        decrypted_data = aesgcm.decrypt(
+            nonce,
+            encrypted,
+            None,
+        )
         vault_contents = json.loads(decrypted_data.decode())
     except Exception as e:
         raise ValueError("Failed to read vault contents.") from e

@@ -3,7 +3,9 @@ import string
 
 
 def generate_password(
-    length: int = 15, use_numbers: bool = True, use_special_chars: bool = True
+    length: int = 15,
+    use_numbers: bool = True,
+    use_special_chars: bool = True,
 ) -> str:
     """
     Generates a secure random password.
@@ -11,7 +13,8 @@ def generate_password(
     Args:
         length (int): Length of the password to generate. Default is 15.
         use_numbers (bool): Whether to include numbers in the password. Default is True.
-        use_special_chars (bool): Whether to include special characters in the password. Default is True.
+        use_special_chars (bool): Whether to include special characters in the password.
+        Default is True.
 
     Returns:
         str: A randomly generated password.

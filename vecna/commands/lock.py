@@ -1,6 +1,8 @@
 import typer
-from ..core.vault import lock_vault
+
 from ..core.session import end_session
+from ..core.vault import lock_vault
+
 
 app = typer.Typer()
 
@@ -12,4 +14,7 @@ def lock():
     """
     lock_vault()
     end_session()
-    typer.secho("🔒🏰 The vault is now sealed with silence...", fg=typer.colors.GREEN)
+    typer.secho(
+        "🔒🏰 The vault is now sealed with silence...",
+        fg=typer.colors.GREEN,
+    )

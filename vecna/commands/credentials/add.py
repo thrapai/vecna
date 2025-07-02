@@ -1,9 +1,11 @@
 import typer
 from typing_extensions import Annotated
-from ...models import Credential
-from ...utils import generate_password
+
 from ...core.session import is_session_active
 from ...core.vault import add_credential
+from ...models import Credential
+from ...utils import generate_password
+
 
 app = typer.Typer()
 
@@ -11,7 +13,11 @@ app = typer.Typer()
 @app.command()
 def add(
     name: Annotated[
-        str, typer.Argument(help="The name of the credential", show_default=False)
+        str,
+        typer.Argument(
+            help="The name of the credential",
+            show_default=False,
+        ),
     ],
 ):
     """
@@ -34,19 +40,34 @@ def add(
     ).strip()
     if not password:
         password = generate_password()
-        typer.secho(f"Generated secure password: {password}", fg=typer.colors.GREEN)
+        typer.secho(
+            f"Generated secure password: {password}",
+            fg=typer.colors.GREEN,
+        )
     else:
         password = password.strip()
-        confirm_password = typer.prompt("Confirm Password", hide_input=True)
+        confirm_password = typer.prompt(
+            "Confirm Password",
+            hide_input=True,
+        )
         if password != confirm_password:
-            typer.secho("Passwords do not match.", fg=typer.colors.RED)
+            typer.secho(
+                "Passwords do not match.",
+                fg=typer.colors.RED,
+            )
             raise typer.Exit(1)
 
-    notes = typer.prompt("Notes (optional)", default="", show_default=False).strip()
+    notes = typer.prompt(
+        "Notes (optional)",
+        default="",
+        show_default=False,
+    ).strip()
     notes = "" if not notes else notes
 
     tags = typer.prompt(
-        "Tags (comma-separated, optional)", default="", show_default=False
+        "Tags (comma-separated, optional)",
+        default="",
+        show_default=False,
     ).strip()
     tags = [tag.strip() for tag in tags.split(",") if tag.strip()] if tags else []
 
@@ -58,4 +79,7 @@ def add(
         tags=tags,
     )
     add_credential(credential)
-    typer.secho(f"Credential '{name}' added successfully!", fg=typer.colors.GREEN)
+    typer.secho(
+        f"Credential '{name}' added successfully!",
+        fg=typer.colors.GREEN,
+    )

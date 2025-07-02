@@ -1,10 +1,16 @@
-from ..config import SESSION_FILE, SESSION_LIFESPAN
-from ..utils import read_secure_file, write_secure_file, delete_secure_file
-from ..models import Session
-import os
 import datetime
-
 import json
+
+from ..config import (
+    SESSION_FILE,
+    SESSION_LIFESPAN,
+)
+from ..models import Session
+from ..utils import (
+    delete_secure_file,
+    read_secure_file,
+    write_secure_file,
+)
 
 
 def create_session():
@@ -23,8 +29,14 @@ def create_session():
         - Sets file permissions to 0o600 (read-write for owner only) before writing
         - Sets file permissions to 0o400 (read-only for owner) after writing
     """
-    session_data = {"unlocked": True, "timestamp": datetime.datetime.now().isoformat()}
-    write_secure_file(SESSION_FILE, json.dumps(session_data).encode())
+    session_data = {
+        "unlocked": True,
+        "timestamp": datetime.datetime.now().isoformat(),
+    }
+    write_secure_file(
+        SESSION_FILE,
+        json.dumps(session_data).encode(),
+    )
 
 
 def end_session():
@@ -66,7 +78,7 @@ def is_session_active() -> bool:
     try:
         session = Session(**json.loads(session_data.decode()))
     except Exception as e:
-        raise ValueError(f"Session file is corrupted or invalid: {e}")
+        raise ValueError(f"Session file is corrupted or invalid: {e}") from e
 
     if not session.unlocked:
         return False

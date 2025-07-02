@@ -1,9 +1,13 @@
 import typer
-
 from typing_extensions import Annotated
-from ..core.vault import create_vault, unlock_vault
-from ..core.session import create_session
+
 from ..config import VAULT_FILE
+from ..core.session import create_session
+from ..core.vault import (
+    create_vault,
+    unlock_vault,
+)
+
 
 app = typer.Typer()
 
@@ -12,7 +16,11 @@ app = typer.Typer()
 def init(
     force: Annotated[
         bool,
-        typer.Option("--force", "-f", help="Overwrite existing vault if it exists"),
+        typer.Option(
+            "--force",
+            "-f",
+            help="Overwrite existing vault if it exists",
+        ),
     ] = False,
 ):
     """
@@ -27,18 +35,25 @@ def init(
 
     typer.echo("🧙 The Whispered One stirs...")
 
-    master = typer.prompt("Craft thy master incantation", hide_input=True)
-    confirm = typer.prompt("Repeat thy incantation", hide_input=True)
+    master = typer.prompt(
+        "Craft thy master incantation",
+        hide_input=True,
+    )
+    confirm = typer.prompt(
+        "Repeat thy incantation",
+        hide_input=True,
+    )
 
     if master != confirm:
         typer.secho(
-            "The ritual failed — the incantations do not match.", fg=typer.colors.RED
+            "The ritual failed — the incantations do not match.",
+            fg=typer.colors.RED,
         )
         raise typer.Exit()
 
     create_vault(master)
     typer.secho(
-        f"🏰 A new vault has been conjured into existence.",
+        "🏰 A new vault has been conjured into existence.",
         fg=typer.colors.GREEN,
     )
     unlock_vault(master)
