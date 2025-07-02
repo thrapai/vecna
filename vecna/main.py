@@ -1,6 +1,6 @@
 import typer
 
-from .commands import app as commands_app
+from vecna.commands import app as commands_app
 
 app = typer.Typer()
 

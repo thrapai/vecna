@@ -8,8 +8,8 @@ app = typer.Typer()
 @app.command()
 def lock():
     """
-    🔒 Secures vault and end active session.
+    🔒🏰Secures vault and end active session.
     """
     lock_vault()
     end_session()
-    typer.secho("🔒 The vault is now sealed with silence...", fg=typer.colors.GREEN)
+    typer.secho("🔒🏰 The vault is now sealed with silence...", fg=typer.colors.GREEN)

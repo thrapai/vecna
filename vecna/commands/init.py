@@ -17,7 +17,7 @@ def init(
     """
     if VAULT_FILE.exists() and not force:
         typer.secho(
-            "⚠️ A vault already exists. Use --force to overwrite it.",
+            "A vault already exists. Use --force to overwrite it.",
             fg=typer.colors.YELLOW,
         )
         raise typer.Exit()
@@ -29,13 +29,13 @@ def init(
 
     if master != confirm:
         typer.secho(
-            "❌ The ritual failed — the incantations do not match.", fg=typer.colors.RED
+            "The ritual failed — the incantations do not match.", fg=typer.colors.RED
         )
         raise typer.Exit()
 
     create_vault(master)
     typer.secho(
-        f"✅ The vault has been bound to thy will at {VAULT_FILE}",
+        f"🏰 A new vault has been conjured into existence.",
         fg=typer.colors.GREEN,
     )
     unlock_vault(master)

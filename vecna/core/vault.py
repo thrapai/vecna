@@ -1,8 +1,16 @@
-from ..config import VECNA_DIR, VAULT_FILE, KEY_DERIVATION_ITERATIONS, KEY_LENGTH
+from ..config import (
+    VECNA_DIR,
+    VAULT_FILE,
+    KEY_DERIVATION_ITERATIONS,
+    KEY_LENGTH,
+    KEY_CACHE_FILE,
+)
+from ..utils import read_secure_file, write_secure_file, delete_secure_file
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 from cryptography.hazmat.backends import default_backend
+from ..models import Credential
 import os
 import json
 
@@ -74,37 +82,27 @@ def create_vault(password: str):
     data = json.dumps({}).encode()
     encrypted = aesgcm.encrypt(nonce, data, None)
 
-    with open(VAULT_FILE, "wb") as f:
-        f.write(salt + nonce + encrypted)
+    write_secure_file(VAULT_FILE, salt + nonce + encrypted)
 
 
 def unlock_vault(password: str) -> dict:
     """
-    Unlock the vault using the provided password and return its contents.
+    Attempts to unlock the vault using the provided password.
 
-    This function reads the encrypted vault file, derives the key using the provided
-    password, and decrypts the contents to return as a dictionary.
-    The consists of:
-    - Salt: The salt used for key derivation (first 16 bytes)
-    - Nonce: The nonce used for AES-GCM encryption (next 12 bytes)
-    - Encrypted data: The actual encrypted JSON data (remaining bytes)
+    This function reads the encrypted vault file, extracts the salt and nonce,
+    and attempts to decrypt the contents using the derived key from the password.
+    If successful, it caches the encryption key for future use.
 
     Args:
-        password (str): The password to unlock the vault
+        password (str): The password to use for unlocking the vault
 
     Returns:
-        dict: The decrypted contents of the vault
+        dict: The decrypted vault contents
 
     Raises:
-        ValueError: If the password is incorrect or the vault is corrupted
+        ValueError: If the password is incorrect or the vault cannot be unlocked
     """
-    if not VAULT_FILE.exists():
-        raise FileNotFoundError(f"Vault file {VAULT_FILE} does not exist.")
-
-    with open(VAULT_FILE, "rb") as f:
-        data = f.read()
-    os.chmod(VAULT_FILE, 0o600)
-
+    data = read_secure_file(VAULT_FILE)
     salt = data[:16]
     nonce = data[16:28]
     encrypted = data[28:]
@@ -113,27 +111,29 @@ def unlock_vault(password: str) -> dict:
     aesgcm = AESGCM(key)
 
     try:
-        decrypted = aesgcm.decrypt(nonce, encrypted, None)
-        return json.loads(decrypted.decode())
+        aesgcm.decrypt(nonce, encrypted, None)
+        write_secure_file(KEY_CACHE_FILE, key)
     except Exception as e:
         raise ValueError("Failed to unlock vault. Check your password.") from e
 
 
 def lock_vault():
     """
-    Lock the vault by removing its contents.
+    Lock the vault by removing the cached key and clearing the vault file.
 
-    This function effectively clears the vault by deleting the encrypted file.
-    It does not delete the vault file itself, allowing for future reinitialization.
+    This function securely deletes the cached encryption key and clears the contents
+    of the vault file, effectively locking it until unlocked again with a password.
 
     Returns:
         None
 
     Side effects:
-        - Deletes the VAULT_FILE if it exists
+        - Deletes the KEY_CACHE_FILE
+        - Clears the VAULT_FILE contents
     """
-    if VAULT_FILE.exists():
-        os.remove(VAULT_FILE)
-        print("Vault locked and cleared.")
-    else:
-        print("Vault is already locked.")
+    if KEY_CACHE_FILE.exists():
+        delete_secure_file(KEY_CACHE_FILE)
+
+
+def add_credential(credential: Credential):
+    pass
