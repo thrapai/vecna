@@ -4,7 +4,6 @@ from pydantic import (
     BaseModel,
     Field,
 )
-from typer import secho
 
 
 class Session(BaseModel):
@@ -56,10 +55,3 @@ class Credential(BaseModel):
         None,
         description="Optional tags associated with the credential.",
     )
-
-    def __str__(self):
-        return secho(
-            f"Credential(name={self.name}, username={self.username},"
-            f" notes={self.notes}), tags={self.tags}",
-            fg="blue",
-        )

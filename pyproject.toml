@@ -25,4 +25,11 @@ line-length = 100
 
 [tool.pylint.messages_control]
 output-format = "colorized"
-disable = ["C0114", "W0718", "C0415", "R0801"]
+disable = [
+    "C0114",
+    "W0718",
+    "C0415",
+    "R0801",
+    "C0209",
+    "W0622"
+]

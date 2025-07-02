@@ -263,3 +263,36 @@ def get_credential(
         raise ValueError(f"Credential '{name}' not found in vault.")
 
     return Credential(**vault_contents[name])
+
+
+def list_credentials() -> list[Credential]:
+    """
+    List all credentials stored in the vault.
+
+    This function retrieves all credentials from the vault, decrypts them,
+    and returns a list of Credential objects.
+
+    Returns:
+        list[Credential]: A list of all credentials in the vault
+
+    Raises:
+        ValueError: If the vault is not unlocked or if there is an error reading the vault
+    """
+    data = read_secure_file(VAULT_FILE)
+    nonce = data[16:28]
+    encrypted = data[28:]
+
+    key = read_secure_file(KEY_CACHE_FILE)
+    aesgcm = AESGCM(key)
+
+    try:
+        decrypted_data = aesgcm.decrypt(
+            nonce,
+            encrypted,
+            None,
+        )
+        vault_contents = json.loads(decrypted_data.decode())
+    except Exception as e:
+        raise ValueError("Failed to read vault contents.") from e
+
+    return [Credential(**cred) for cred in vault_contents.values()]
