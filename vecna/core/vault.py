@@ -1,5 +1,6 @@
 import json
 import os
+from typing import Optional
 
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import hashes
@@ -13,7 +14,10 @@ from ..config import (
     VAULT_FILE,
     VECNA_DIR,
 )
-from ..models import Credential
+from ..models import (
+    Credential,
+    UpdateCredential,
+)
 from ..utils import (
     delete_secure_file,
     read_secure_file,
@@ -213,11 +217,6 @@ def add_credential(
         new_data,
         None,
     )
-    print(
-        "Added new data",
-        new_data,
-        "\n",
-    )
     write_secure_file(
         VAULT_FILE,
         salt + nonce + encrypted_new_data,
@@ -226,7 +225,7 @@ def add_credential(
 
 def get_credential(
     name: str,
-) -> Credential:
+) -> Optional[Credential]:
     """
     Retrieve a credential from the vault by name.
 
@@ -238,6 +237,7 @@ def get_credential(
 
     Returns:
         Credential: The requested credential object
+        None: If the credential does not exist in the vault
 
     Raises:
         ValueError: If the vault is not unlocked or if the credential does not exist
@@ -260,7 +260,7 @@ def get_credential(
         raise ValueError("Failed to read vault contents.") from e
 
     if name not in vault_contents:
-        raise ValueError(f"Credential '{name}' not found in vault.")
+        return None
 
     return Credential(**vault_contents[name])
 
@@ -354,7 +354,7 @@ def delete_credential(
 
 
 def update_credential(
-    credential: Credential,
+    credential: UpdateCredential,
 ) -> bool:
     """
     Update an existing credential in the vault.
@@ -388,10 +388,14 @@ def update_credential(
     except Exception as e:
         raise ValueError("Failed to read vault contents.") from e
 
-    if credential.name not in vault_contents:
-        return False
+    if credential.new_name is not None:
+        vault_contents[credential.new_name] = vault_contents.pop(credential.name)
+        credential.name = credential.new_name
+        credential.new_name = None
 
-    vault_contents[credential.name] = credential.model_dump()
+    for key, value in credential.model_dump().items():
+        if value is not None:
+            vault_contents[credential.name][key] = value
 
     new_data = json.dumps(vault_contents).encode()
     encrypted_new_data = aesgcm.encrypt(
@@ -399,7 +403,6 @@ def update_credential(
         new_data,
         None,
     )
-
     write_secure_file(
         VAULT_FILE,
         data[:16] + nonce + encrypted_new_data,

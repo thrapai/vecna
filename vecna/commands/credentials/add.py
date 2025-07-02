@@ -41,8 +41,8 @@ def add(
     if not password:
         password = generate_password()
         typer.secho(
-            f"Generated secure password.",
-            fg=typer.colors.GREEN,
+            "Generated secure password.",
+            fg=typer.colors.CYAN,
         )
     else:
         password = password.strip()

@@ -1,7 +1,14 @@
-from dataclasses import dataclass, field, asdict
-from typing import Optional, List
-from datetime import datetime
 import json
+from dataclasses import (
+    asdict,
+    dataclass,
+    field,
+)
+from datetime import datetime
+from typing import (
+    List,
+    Optional,
+)
 
 
 @dataclass
@@ -13,12 +20,18 @@ class Session:
         unlocked (bool): Indicates if the session is currently unlocked.
         timestamp (str): ISO formatted timestamp of when the session was created or last modified.
     """
-    unlocked: bool = field(default=True, metadata={
-        "description": "Indicates if the session is currently unlocked."
-    })
-    timestamp: str = field(default_factory=lambda: datetime.utcnow().isoformat(), metadata={
-        "description": "ISO formatted timestamp of when the session was created or last modified."
-    })
+
+    unlocked: bool = field(
+        default=True, metadata={"description": "Indicates if the session is currently unlocked."}
+    )
+    timestamp: str = field(
+        default_factory=lambda: datetime.utcnow().isoformat(),
+        metadata={
+            "description": (
+                "ISO formatted timestamp of when the session " "was created or last modified."
+            )
+        },
+    )
 
 
 @dataclass
@@ -33,21 +46,16 @@ class Credential:
         notes (Optional[str]): Optional notes associated with the credential.
         tags (Optional[List[str]]): Optional tags associated with the credential.
     """
-    name: str = field(metadata={
-        "description": "The name of the credential."
-    })
-    username: str = field(metadata={
-        "description": "The username associated with the credential."
-    })
-    password: str = field(metadata={
-        "description": "The password associated with the credential."
-    })
-    notes: Optional[str] = field(default="", metadata={
-        "description": "Optional notes associated with the credential."
-    })
-    tags: Optional[List[str]] = field(default=None, metadata={
-        "description": "Optional tags associated with the credential."
-    })
+
+    name: str = field(metadata={"description": "The name of the credential."})
+    username: str = field(metadata={"description": "The username associated with the credential."})
+    password: str = field(metadata={"description": "The password associated with the credential."})
+    notes: Optional[str] = field(
+        default="", metadata={"description": "Optional notes associated with the credential."}
+    )
+    tags: Optional[List[str]] = field(
+        default=None, metadata={"description": "Optional tags associated with the credential."}
+    )
 
     def model_dump_json(self, indent: int = 2) -> str:
         """
@@ -69,3 +77,34 @@ class Credential:
             dict: The dictionary representation of the credential.
         """
         return asdict(self)
+
+
+@dataclass
+class UpdateCredential(Credential):
+    """
+    Represents an update operation for a credential in the Vecna CLI vault.
+    Inherits from Credential and allows for updating specific fields.
+
+    Attributes:
+        new_name (Optional[str]): New name for the credential, if being updated.
+        username (Optional[str]): New username for the credential, if being updated.
+        password (Optional[str]): New password for the credential, if being updated.
+        notes (Optional[str]): New notes for the credential, if being updated.
+        tags (Optional[List[str]]): New tags for the credential, if being updated.
+    """
+
+    new_name: Optional[str] = field(
+        default=None, metadata={"description": "New name for the credential, if being updated."}
+    )
+    username: Optional[str] = field(
+        default=None, metadata={"description": "New username for the credential, if being updated."}
+    )
+    password: Optional[str] = field(
+        default=None, metadata={"description": "New password for the credential, if being updated."}
+    )
+    notes: Optional[str] = field(
+        default=None, metadata={"description": "New notes for the credential, if being updated."}
+    )
+    tags: Optional[List[str]] = field(
+        default=None, metadata={"description": "New tags for the credential, if being updated."}
+    )

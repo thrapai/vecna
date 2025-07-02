@@ -60,6 +60,10 @@ def get(
 
     credential = get_credential(name)
 
+    if credential is None:
+        typer.secho(f"Credential '{name}' not found.", fg=typer.colors.YELLOW)
+        raise typer.Exit(1)
+
     if details:
         rich_print(credential.model_dump_json(indent=2))
         return
