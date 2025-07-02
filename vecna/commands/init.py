@@ -1,5 +1,6 @@
 import typer
-from ..core.vault import create_vault
+from ..core.vault import create_vault, unlock_vault
+from ..core.session import create_session
 from ..config import VAULT_FILE
 
 app = typer.Typer()
@@ -28,8 +29,7 @@ def init(
 
     if master != confirm:
         typer.secho(
-            "❌ The ritual failed — the incantations do not match.",
-            fg=typer.colors.RED
+            "❌ The ritual failed — the incantations do not match.", fg=typer.colors.RED
         )
         raise typer.Exit()
 
@@ -38,3 +38,5 @@ def init(
         f"✅ The vault has been bound to thy will at {VAULT_FILE}",
         fg=typer.colors.GREEN,
     )
+    unlock_vault(master)
+    create_session()

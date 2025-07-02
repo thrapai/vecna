@@ -46,20 +46,20 @@ def derive_key(password: bytes, salt: bytes) -> bytes:
 def create_vault(password: str):
     """
     Create a new vault encrypted with the provided password.
-    
+
     This function initializes a new empty vault by:
     1. Creating the Vecna directory if it doesn't exist
     2. Generating cryptographic components (salt and nonce)
     3. Deriving an encryption key from the password
     4. Creating an empty JSON structure and encrypting it
     5. Writing the encrypted data along with the salt and nonce to the vault file
-    
+
     Args:
         password (str): The password to encrypt the vault with
-        
+
     Returns:
         None
-        
+
     Side effects:
         - Creates VECNA_DIR if it doesn't exist
         - Creates or overwrites the vault file at VAULT_FILE
@@ -81,20 +81,20 @@ def create_vault(password: str):
 def unlock_vault(password: str) -> dict:
     """
     Unlock the vault using the provided password and return its contents.
-    
+
     This function reads the encrypted vault file, derives the key using the provided
     password, and decrypts the contents to return as a dictionary.
     The consists of:
     - Salt: The salt used for key derivation (first 16 bytes)
     - Nonce: The nonce used for AES-GCM encryption (next 12 bytes)
     - Encrypted data: The actual encrypted JSON data (remaining bytes)
-    
+
     Args:
         password (str): The password to unlock the vault
-        
+
     Returns:
         dict: The decrypted contents of the vault
-        
+
     Raises:
         ValueError: If the password is incorrect or the vault is corrupted
     """
@@ -103,6 +103,7 @@ def unlock_vault(password: str) -> dict:
 
     with open(VAULT_FILE, "rb") as f:
         data = f.read()
+    os.chmod(VAULT_FILE, 0o600)
 
     salt = data[:16]
     nonce = data[16:28]
@@ -111,9 +112,28 @@ def unlock_vault(password: str) -> dict:
     key = derive_key(password.encode(), salt)
     aesgcm = AESGCM(key)
 
-
     try:
         decrypted = aesgcm.decrypt(nonce, encrypted, None)
         return json.loads(decrypted.decode())
     except Exception as e:
         raise ValueError("Failed to unlock vault. Check your password.") from e
+
+
+def lock_vault():
+    """
+    Lock the vault by removing its contents.
+
+    This function effectively clears the vault by deleting the encrypted file.
+    It does not delete the vault file itself, allowing for future reinitialization.
+
+    Returns:
+        None
+
+    Side effects:
+        - Deletes the VAULT_FILE if it exists
+    """
+    if VAULT_FILE.exists():
+        os.remove(VAULT_FILE)
+        print("Vault locked and cleared.")
+    else:
+        print("Vault is already locked.")
