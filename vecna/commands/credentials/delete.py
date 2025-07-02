@@ -21,9 +21,7 @@ def delete(credential_name: str):
         )
         raise typer.Exit(1)
 
-    # Assuming delete_credential is a function that deletes a credential by name
-    success = delete_credential(credential_name)
-    if success:
+    if delete_credential(credential_name):
         typer.secho(f"Credential '{credential_name}' deleted successfully.", fg=typer.colors.GREEN)
     else:
         typer.secho(f"Credential '{credential_name}' not found.", fg=typer.colors.RED)

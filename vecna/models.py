@@ -1,12 +1,11 @@
-from typing import Optional
-
-from pydantic import (
-    BaseModel,
-    Field,
-)
+from dataclasses import dataclass, field, asdict
+from typing import Optional, List
+from datetime import datetime
+import json
 
 
-class Session(BaseModel):
+@dataclass
+class Session:
     """
     Represents a user session in the Vecna CLI.
 
@@ -14,44 +13,59 @@ class Session(BaseModel):
         unlocked (bool): Indicates if the session is currently unlocked.
         timestamp (str): ISO formatted timestamp of when the session was created or last modified.
     """
-
-    unlocked: bool = Field(
-        default=True,
-        description="Indicates if the session is currently unlocked.",
-    )
-    timestamp: str = Field(
-        ...,
-        description="ISO formatted timestamp of when the session was created or last modified.",
-    )
+    unlocked: bool = field(default=True, metadata={
+        "description": "Indicates if the session is currently unlocked."
+    })
+    timestamp: str = field(default_factory=lambda: datetime.utcnow().isoformat(), metadata={
+        "description": "ISO formatted timestamp of when the session was created or last modified."
+    })
 
 
-class Credential(BaseModel):
+@dataclass
+class Credential:
     """
     Represents a credential stored in the Vecna CLI vault.
 
     Attributes:
         name (str): The name of the credential.
-        value (str): The value of the credential, which is encrypted.
-        metadata (dict): Additional metadata associated with the credential.
+        username (str): The username associated with the credential.
+        password (str): The password associated with the credential.
+        notes (Optional[str]): Optional notes associated with the credential.
+        tags (Optional[List[str]]): Optional tags associated with the credential.
     """
+    name: str = field(metadata={
+        "description": "The name of the credential."
+    })
+    username: str = field(metadata={
+        "description": "The username associated with the credential."
+    })
+    password: str = field(metadata={
+        "description": "The password associated with the credential."
+    })
+    notes: Optional[str] = field(default="", metadata={
+        "description": "Optional notes associated with the credential."
+    })
+    tags: Optional[List[str]] = field(default=None, metadata={
+        "description": "Optional tags associated with the credential."
+    })
 
-    name: str = Field(
-        ...,
-        description="The name of the credential.",
-    )
-    username: str = Field(
-        ...,
-        description="The username associated with the credential.",
-    )
-    password: str = Field(
-        ...,
-        description="The password associated with the credential.",
-    )
-    notes: Optional[str] = Field(
-        "",
-        description="Optional notes associated with the credential.",
-    )
-    tags: Optional[list[str]] = Field(
-        None,
-        description="Optional tags associated with the credential.",
-    )
+    def model_dump_json(self, indent: int = 2) -> str:
+        """
+        Dumps the credential as a JSON string with indentation.
+
+        Args:
+            indent (int): The number of spaces to use for indentation.
+
+        Returns:
+            str: The JSON representation of the credential.
+        """
+        return json.dumps(asdict(self), indent=indent)
+
+    def model_dump(self) -> dict:
+        """
+        Dumps the credential as a dictionary.
+
+        Returns:
+            dict: The dictionary representation of the credential.
+        """
+        return asdict(self)
