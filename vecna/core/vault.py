@@ -136,4 +136,40 @@ def lock_vault():
 
 
 def add_credential(credential: Credential):
-    pass
+    """
+    Add a new credential to the vault.
+
+    This function appends a new credential to the existing vault contents.
+    It reads the current vault, adds the new credential, and writes the updated
+    vault back to the file.
+
+    Args:
+        credential (Credential): The credential object to add
+
+    Returns:
+        None
+
+    Raises:
+        ValueError: If the vault is not unlocked or if there is an error writing to the vault
+    """
+
+    data = read_secure_file(VAULT_FILE)
+    salt = data[:16]
+    nonce = data[16:28]
+    encrypted = data[28:]
+
+    key = read_secure_file(KEY_CACHE_FILE)
+    aesgcm = AESGCM(key)
+
+    try:
+        decrypted_data = aesgcm.decrypt(nonce, encrypted, None)
+        vault_contents = json.loads(decrypted_data.decode())
+    except Exception as e:
+        raise ValueError("Failed to read vault contents.") from e
+
+    vault_contents[credential.name] = credential.model_dump()
+
+    new_data = json.dumps(vault_contents).encode()
+    encrypted_new_data = aesgcm.encrypt(nonce, new_data, None)
+    print("Added new data", new_data, "\n")
+    write_secure_file(VAULT_FILE, salt + nonce + encrypted_new_data)

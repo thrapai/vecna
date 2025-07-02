@@ -61,7 +61,7 @@ def is_session_active() -> bool:
     session_data = read_secure_file(SESSION_FILE)
 
     try:
-        session = Session(**session_data.decode())
+        session = Session(**json.loads(session_data.decode()))
     except Exception as e:
         raise ValueError(f"Session file is corrupted or invalid: {e}")
 

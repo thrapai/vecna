@@ -41,9 +41,12 @@ class Credential(BaseModel):
     notes: Optional[str] = Field(
         "", description="Optional notes associated with the credential."
     )
+    tags: Optional[list[str]] = Field(
+        None, description="Optional tags associated with the credential."
+    )
 
     def __str__(self):
         return secho(
-            f"Credential(name={self.name}, username={self.username}, notes={self.notes})",
+            f"Credential(name={self.name}, username={self.username}, notes={self.notes}), tags={self.tags}",
             fg="blue",
         )

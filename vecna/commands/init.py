@@ -1,4 +1,6 @@
 import typer
+
+from typing_extensions import Annotated
 from ..core.vault import create_vault, unlock_vault
 from ..core.session import create_session
 from ..config import VAULT_FILE
@@ -8,9 +10,10 @@ app = typer.Typer()
 
 @app.command()
 def init(
-    force: bool = typer.Option(
-        False, "--force", "-f", help="Overwrite existing vault if it exists"
-    )
+    force: Annotated[
+        bool,
+        typer.Option("--force", "-f", help="Overwrite existing vault if it exists"),
+    ] = False,
 ):
     """
     🔮 Begin a new arcane pact. Initializes your encrypted vault.
