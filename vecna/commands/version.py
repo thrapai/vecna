@@ -2,7 +2,6 @@ import typer
 
 from ..config import CLI_VERSION
 
-
 app = typer.Typer()
 
 

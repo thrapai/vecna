@@ -1,11 +1,16 @@
 import json
 import os
-from typing import Optional
 
-from cryptography.hazmat.backends import default_backend
+from cryptography.hazmat.backends import (
+    default_backend,
+)
 from cryptography.hazmat.primitives import hashes
-from cryptography.hazmat.primitives.ciphers.aead import AESGCM
-from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
+from cryptography.hazmat.primitives.ciphers.aead import (
+    AESGCM,
+)
+from cryptography.hazmat.primitives.kdf.pbkdf2 import (
+    PBKDF2HMAC,
+)
 
 from ..config import (
     KEY_CACHE_FILE,
@@ -225,7 +230,7 @@ def add_credential(
 
 def get_credential(
     name: str,
-) -> Optional[Credential]:
+) -> Credential | None:
     """
     Retrieve a credential from the vault by name.
 
@@ -393,7 +398,10 @@ def update_credential(
         credential.name = credential.new_name
         credential.new_name = None
 
-    for key, value in credential.model_dump().items():
+    for (
+        key,
+        value,
+    ) in credential.model_dump().items():
         if value is not None:
             vault_contents[credential.name][key] = value
 

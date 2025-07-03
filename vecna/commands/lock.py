@@ -3,7 +3,6 @@ import typer
 from ..core.session import end_session
 from ..core.vault import lock_vault
 
-
 app = typer.Typer()
 
 

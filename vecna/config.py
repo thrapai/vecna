@@ -1,6 +1,5 @@
 from pathlib import Path
 
-
 # Root directory for vecna CLI data
 VECNA_DIR = Path.home() / ".vecna"
 

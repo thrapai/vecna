@@ -6,7 +6,6 @@ from .lock import app as lock_app
 from .unlock import app as unlock_app
 from .version import app as version_app
 
-
 app = typer.Typer()
 
 app.add_typer(version_app)

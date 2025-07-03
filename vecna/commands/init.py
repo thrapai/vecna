@@ -1,5 +1,6 @@
+from typing import Annotated
+
 import typer
-from typing_extensions import Annotated
 
 from ..config import VAULT_FILE
 from ..core.session import create_session
@@ -7,7 +8,6 @@ from ..core.vault import (
     create_vault,
     unlock_vault,
 )
-
 
 app = typer.Typer()
 

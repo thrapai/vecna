@@ -3,7 +3,6 @@ import typer
 from ...core.session import is_session_active
 from ...core.vault import delete_credential
 
-
 app = typer.Typer()
 
 
@@ -22,6 +21,12 @@ def delete(credential_name: str):
         raise typer.Exit(1)
 
     if delete_credential(credential_name):
-        typer.secho(f"Credential '{credential_name}' deleted successfully.", fg=typer.colors.GREEN)
+        typer.secho(
+            f"Credential '{credential_name}' deleted successfully.",
+            fg=typer.colors.GREEN,
+        )
     else:
-        typer.secho(f"Credential '{credential_name}' not found.", fg=typer.colors.RED)
+        typer.secho(
+            f"Credential '{credential_name}' not found.",
+            fg=typer.colors.RED,
+        )

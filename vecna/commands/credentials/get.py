@@ -1,11 +1,11 @@
+from typing import Annotated
+
 import typer
 from rich import print as rich_print
-from typing_extensions import Annotated
 
 from ...core.session import is_session_active
 from ...core.vault import get_credential
 from ...utils import copy_to_clipboard
-
 
 app = typer.Typer()
 
@@ -61,7 +61,10 @@ def get(
     credential = get_credential(name)
 
     if credential is None:
-        typer.secho(f"Credential '{name}' not found.", fg=typer.colors.YELLOW)
+        typer.secho(
+            f"Credential '{name}' not found.",
+            fg=typer.colors.YELLOW,
+        )
         raise typer.Exit(1)
 
     if details:

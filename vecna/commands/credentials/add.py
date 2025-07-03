@@ -1,11 +1,11 @@
+from typing import Annotated
+
 import typer
-from typing_extensions import Annotated
 
 from ...core.session import is_session_active
 from ...core.vault import add_credential
 from ...models import Credential
 from ...utils import generate_password
-
 
 app = typer.Typer()
 
