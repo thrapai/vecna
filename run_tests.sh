@@ -1,7 +1,4 @@
 #!/bin/bash
 set -e
 
-isort $*
-black $*
-pylint $*
-# pytest --doctest-modules $*
+pytest --doctest-modules tests/ $*
