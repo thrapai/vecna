@@ -3,7 +3,7 @@ from typing import Annotated
 import typer
 
 from ...core.session import is_session_active
-from ...core.vault import add_credential
+from ...core.vault import Vault
 from ...models import Credential
 from ...utils import generate_password
 
@@ -21,14 +21,23 @@ def add(
     ],
 ):
     """
-    🗝️ Add a new credential to your vault.
+    Add a new credential to the vault.
     """
     if not is_session_active():
         typer.secho(
-            "No active session found. Please unlock your vault first.",
+            "No active session. Please unlock the vault first.",
             fg=typer.colors.RED,
         )
         raise typer.Exit(1)
+
+    try:
+        vault = Vault().load()
+    except Exception as e:
+        typer.secho(
+            "Vault is locked or inaccessible. Please unlock it first.",
+            fg=typer.colors.RED,
+        )
+        raise typer.Exit(1) from e
 
     username = typer.prompt("Username (or email)").strip()
 
@@ -38,23 +47,14 @@ def add(
         hide_input=True,
         show_default=False,
     ).strip()
+
     if not password:
         password = generate_password()
-        typer.secho(
-            "Generated secure password.",
-            fg=typer.colors.CYAN,
-        )
+        typer.secho("A secure password has been generated.", fg=typer.colors.CYAN)
     else:
-        password = password.strip()
-        confirm_password = typer.prompt(
-            "Confirm Password",
-            hide_input=True,
-        )
+        confirm_password = typer.prompt("Confirm password", hide_input=True)
         if password != confirm_password:
-            typer.secho(
-                "Passwords do not match.",
-                fg=typer.colors.RED,
-            )
+            typer.secho("Passwords do not match.", fg=typer.colors.RED)
             raise typer.Exit(1)
 
     notes = typer.prompt(
@@ -62,7 +62,6 @@ def add(
         default="",
         show_default=False,
     ).strip()
-    notes = "" if not notes else notes
 
     tags = typer.prompt(
         "Tags (comma-separated, optional)",
@@ -78,8 +77,6 @@ def add(
         notes=notes,
         tags=tags,
     )
-    add_credential(credential)
-    typer.secho(
-        f"Credential '{name}' added successfully!",
-        fg=typer.colors.GREEN,
-    )
+    vault.add_credential(credential)
+
+    typer.secho(f"Credential '{name}' added successfully.", fg=typer.colors.GREEN)

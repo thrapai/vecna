@@ -1,23 +1,46 @@
 from pathlib import Path
 
-# Root directory for vecna CLI data
+# -----------------------------
+# Versioning
+# -----------------------------
+try:
+    from importlib.metadata import PackageNotFoundError, version
+except ImportError:
+    from importlib_metadata import PackageNotFoundError, version  # For Python <3.8
+
+
+def get_version() -> str:
+    """Return the installed version of the Vecna CLI package."""
+    try:
+        return version("vecna")
+    except PackageNotFoundError:
+        return "unknown"
+
+
+CLI_VERSION = get_version()
+
+# -----------------------------
+# File & Directory Paths
+# -----------------------------
 VECNA_DIR = Path.home() / ".vecna"
 
-# Encrypted vault file
+# Vault file (encrypted secrets)
 VAULT_FILE = VECNA_DIR / "vault.enc"
 
-# Session metadata here
+# Session tracking
 SESSION_FILE = VECNA_DIR / "session.json"
 SESSION_LIFESPAN = 60 * 30  # 30 minutes
 
-# Encryption parameters
-KEY_DERIVATION_ITERATIONS = 200_000  # PBKDF2 or Argon2
-KEY_LENGTH = 32  # 256 bits for AES
-KEY_CACHE_FILE = VECNA_DIR / "key.cache"
-KEY_ENCRYPTION_ALGORITHM = "AES-GCM"
-
-# config file
+# Config file
 CONFIG_FILE = VECNA_DIR / "config.json"
 
-# Metadata
-CLI_VERSION = "0.1.0"
+# -----------------------------
+# Encryption Settings
+# -----------------------------
+KEY_DERIVATION_ITERATIONS = 200_000  # Used in PBKDF2 or Argon2
+KEY_LENGTH = 32  # 256 bits (32 bytes) for AES
+KEY_ENCRYPTION_ALGORITHM = "AES-GCM"
+
+# In-memory key caching (Linux-specific)
+KEY_CACHE_DIR = Path("/dev/shm")
+KEY_CACHE_FILE = KEY_CACHE_DIR / "key.cache"

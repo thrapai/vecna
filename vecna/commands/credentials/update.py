@@ -3,14 +3,8 @@ from typing import Annotated
 import typer
 
 from ...core.session import is_session_active
-from ...core.vault import (
-    get_credential,
-    update_credential,
-)
-from ...models import (
-    Credential,
-    UpdateCredential,
-)
+from ...core.vault import Vault
+from ...models import Credential, UpdateCredential
 from ...utils import generate_password
 
 app = typer.Typer()
@@ -51,33 +45,38 @@ def prompt_for_updates(
         show_default=False,
     ).strip()
 
-    password = typer.prompt(
-        "New Password (leave empty to generate a secure password)",
-        default="",
-        hide_input=True,
-        show_default=False,
-    ).strip()
-    if not password:
-        password = generate_password()
-        typer.secho(
-            "Generated secure password.",
-            fg=typer.colors.CYAN,
+    change_password = (
+        typer.prompt(
+            "Would you like to update your password? (y/n)",
+            default="n",
+            show_default=True,
         )
-    else:
-        confirm = typer.prompt("Confirm password", hide_input=True)
-        if confirm != password:
-            typer.secho(
-                "Passwords do not match.",
-                fg=typer.colors.RED,
-            )
-            raise typer.Exit(1)
-    new_cred.password = password
+        .strip()
+        .lower()
+    )
 
-    new_cred.notes = typer.prompt(
-        "Notes",
-        default=current.notes or "",
-        show_default=False,
-    ).strip()
+    if change_password in {"y", "yes"}:
+        password = typer.prompt(
+            "New password (leave empty to generate a secure password)",
+            default="",
+            hide_input=True,
+            show_default=False,
+        ).strip()
+        if not password:
+            password = generate_password()
+            typer.secho("A secure password has been generated.", fg=typer.colors.CYAN)
+        else:
+            confirm = typer.prompt("Confirm password", hide_input=True)
+            if confirm != password:
+                typer.secho("Passwords do not match.", fg=typer.colors.RED)
+                raise typer.Exit(1)
+        new_cred.password = password
+
+        new_cred.notes = typer.prompt(
+            "Notes",
+            default=current.notes or "",
+            show_default=False,
+        ).strip()
 
     tags_input = typer.prompt(
         "Tags (comma-separated)",
@@ -161,18 +160,27 @@ def update(
     ] = False,
 ):
     """
-    🔄 Update an existing credential in your vault.
+    Update an existing credential in your vault.
 
     You can use either --interactive mode or individual options to update fields.
     """
     if not is_session_active():
         typer.secho(
-            "No active session. Please unlock your vault.",
+            "No active session. Please unlock the vault first.",
             fg=typer.colors.RED,
         )
         raise typer.Exit(1)
 
-    current_cred = get_credential(name)
+    try:
+        vault = Vault().load()
+    except Exception as e:
+        typer.secho(
+            "Vault is locked or inaccessible. Please unlock it first.",
+            fg=typer.colors.RED,
+        )
+        raise typer.Exit(1) from e
+
+    current_cred = vault.get_credential(name)
     if current_cred is None:
         typer.secho(
             f"Credential '{name}' not found.",
@@ -217,13 +225,15 @@ def update(
         if tags:
             new_cred.tags = [tag.strip() for tag in tags.split(",") if tag.strip()]
 
-    if update_credential(new_cred):
-        typer.secho(
-            f"Credential '{name}' updated successfully.",
-            fg=typer.colors.GREEN,
-        )
-    else:
+    try:
+        vault.update_credential(new_cred)
+    except KeyError:
         typer.secho(
             f"Failed to update credential '{name}'.",
             fg=typer.colors.RED,
         )
+
+    typer.secho(
+        f"Credential '{name}' updated successfully.",
+        fg=typer.colors.GREEN,
+    )

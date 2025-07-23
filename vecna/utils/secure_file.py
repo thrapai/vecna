@@ -3,7 +3,7 @@ import os
 
 def read_secure_file(
     file_path: str,
-) -> bytes:
+) -> bytes | None:
     """
     Reads a file securely by setting appropriate permissions.
 
@@ -11,13 +11,10 @@ def read_secure_file(
         file_path (str): The path to the file to read.
 
     Returns:
-        bytes: The contents of the file.
-
-    Raises:
-        FileNotFoundError: If the file does not exist.
+        bytes: The contents of the file or None if the file does not exist.
     """
     if not os.path.exists(file_path):
-        raise FileNotFoundError("File does not exist.")
+        return None
 
     os.chmod(file_path, 0o600)
     with open(file_path, "rb") as f:
@@ -60,11 +57,10 @@ def delete_secure_file(
         file_path (str): The path to the file to delete.
 
     Raises:
-        FileNotFoundError: If the file does not exist.
         IOError: If there is an error deleting the file.
     """
     if not os.path.exists(file_path):
-        raise FileNotFoundError("File does not exist.")
+        return
 
     os.chmod(file_path, 0o600)
     os.remove(file_path)

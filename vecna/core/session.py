@@ -1,16 +1,9 @@
 import datetime
 import json
 
-from ..config import (
-    SESSION_FILE,
-    SESSION_LIFESPAN,
-)
+from ..config import SESSION_FILE, SESSION_LIFESPAN
 from ..models import Session
-from ..utils import (
-    delete_secure_file,
-    read_secure_file,
-    write_secure_file,
-)
+from ..utils import delete_secure_file, read_secure_file, write_secure_file
 
 
 def create_session():
@@ -68,17 +61,17 @@ def is_session_active() -> bool:
         bool: True if the session is active, False otherwise
 
     Raises:
-        FileNotFoundError: If the session file does not exist
+        ValueError: If the session file does not exist
     """
-    try:
-        session_data = read_secure_file(SESSION_FILE)
-    except FileNotFoundError:
+    session_data = read_secure_file(SESSION_FILE)
+
+    if session_data is None:
         return False
 
     try:
         session = Session(**json.loads(session_data.decode()))
-    except Exception as e:
-        raise ValueError(f"Session file is corrupted or invalid: {e}") from e
+    except Exception:
+        return False
 
     if not session.unlocked:
         return False

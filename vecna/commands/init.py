@@ -2,12 +2,8 @@ from typing import Annotated
 
 import typer
 
-from ..config import VAULT_FILE
 from ..core.session import create_session
-from ..core.vault import (
-    create_vault,
-    unlock_vault,
-)
+from ..core.vault import Vault
 
 app = typer.Typer()
 
@@ -19,42 +15,44 @@ def init(
         typer.Option(
             "--force",
             "-f",
-            help="Overwrite existing vault if it exists",
+            help="Overwrite the existing vault if it already exists.",
         ),
     ] = False,
 ):
     """
-    🔮 Begin a new arcane pact. Initializes your encrypted vault.
+    Initialize a new encrypted vault.
     """
-    if VAULT_FILE.exists() and not force:
+    vault = Vault()
+
+    if vault.exists() and not force:
         typer.secho(
-            "A vault already exists. Use --force to overwrite it.",
+            "Vault already exists. Use --force to overwrite.",
             fg=typer.colors.YELLOW,
         )
         raise typer.Exit()
 
-    typer.echo("🧙 The Whispered One stirs...")
+    typer.echo("Initializing vault...")
 
     master = typer.prompt(
-        "Craft thy master incantation",
+        "Enter master password",
         hide_input=True,
     )
     confirm = typer.prompt(
-        "Repeat thy incantation",
+        "Confirm master password",
         hide_input=True,
     )
 
     if master != confirm:
         typer.secho(
-            "The ritual failed — the incantations do not match.",
+            "Passwords do not match. Vault initialization aborted.",
             fg=typer.colors.RED,
         )
         raise typer.Exit()
 
-    create_vault(master)
+    vault.create(master).unlock(master)
+    create_session()
+
     typer.secho(
-        "🏰 A new vault has been conjured into existence.",
+        "Vault created and unlocked successfully.",
         fg=typer.colors.GREEN,
     )
-    unlock_vault(master)
-    create_session()

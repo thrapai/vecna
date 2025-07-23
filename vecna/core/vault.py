@@ -1,16 +1,11 @@
 import json
 import os
+from typing import Self
 
-from cryptography.hazmat.backends import (
-    default_backend,
-)
+from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import hashes
-from cryptography.hazmat.primitives.ciphers.aead import (
-    AESGCM,
-)
-from cryptography.hazmat.primitives.kdf.pbkdf2 import (
-    PBKDF2HMAC,
-)
+from cryptography.hazmat.primitives.ciphers.aead import AESGCM
+from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 
 from ..config import (
     KEY_CACHE_FILE,
@@ -19,401 +14,337 @@ from ..config import (
     VAULT_FILE,
     VECNA_DIR,
 )
-from ..models import (
-    Credential,
-    UpdateCredential,
-)
-from ..utils import (
-    delete_secure_file,
-    read_secure_file,
-    write_secure_file,
-)
+from ..models import Credential, UpdateCredential, VaultData
+from ..utils import delete_secure_file, read_secure_file, write_secure_file
 
 
-def derive_key(
-    password: bytes,
-    salt: bytes,
-) -> bytes:
-    """
-    Derives an encryption key from a password using PBKDF2.
+class Vault:
+    def __init__(self):
+        self.salt: bytes | None = None
+        self.nonce: bytes | None = None
+        self.encrypted_data: bytes | None = None
+        self.data: VaultData = VaultData()
 
-    This function generates a cryptographic key from a user password by applying
-    the PBKDF2 (Password-Based Key Derivation Function 2) key stretching algorithm.
-    It uses SHA-256 as the hash function and applies a configurable number of iterations
-    to increase resistance against brute-force attacks.
+    @staticmethod
+    def _delete_key():
+        """
+        Delete the cached encryption key.
 
-    Args:
-        password : bytes
-            The user-supplied password bytes to derive the key from
-        salt : bytes
-            Random bytes used to salt the key derivation process, preventing
-            precomputed attacks
-
-    Returns:
-        bytes
-            The derived key of length KEY_LENGTH bytes
-
-    Notes:
-        The security of the derived key depends on:
-        - The strength of the original password
-        - The number of iterations (KEY_DERIVATION_ITERATIONS)
-        - The salt uniqueness
-    """
-    kdf = PBKDF2HMAC(
-        algorithm=hashes.SHA256(),
-        length=KEY_LENGTH,
-        salt=salt,
-        iterations=KEY_DERIVATION_ITERATIONS,
-        backend=default_backend(),
-    )
-    return kdf.derive(password)
-
-
-def create_vault(
-    password: str,
-):
-    """
-    Create a new vault encrypted with the provided password.
-
-    This function initializes a new empty vault by:
-    1. Creating the Vecna directory if it doesn't exist
-    2. Generating cryptographic components (salt and nonce)
-    3. Deriving an encryption key from the password
-    4. Creating an empty JSON structure and encrypting it
-    5. Writing the encrypted data along with the salt and nonce to the vault file
-
-    Args:
-        password (str): The password to encrypt the vault with
-
-    Returns:
-        None
-
-    Side effects:
-        - Creates VECNA_DIR if it doesn't exist
-        - Creates or overwrites the vault file at VAULT_FILE
-    """
-    VECNA_DIR.mkdir(
-        parents=True,
-        exist_ok=True,
-    )
-
-    salt = os.urandom(16)
-    nonce = os.urandom(12)
-    key = derive_key(
-        password.encode(),
-        salt,
-    )
-
-    aesgcm = AESGCM(key)
-    data = json.dumps({}).encode()
-    encrypted = aesgcm.encrypt(nonce, data, None)
-
-    write_secure_file(
-        VAULT_FILE,
-        salt + nonce + encrypted,
-    )
-
-
-def unlock_vault(
-    password: str,
-) -> dict:
-    """
-    Attempts to unlock the vault using the provided password.
-
-    This function reads the encrypted vault file, extracts the salt and nonce,
-    and attempts to decrypt the contents using the derived key from the password.
-    If successful, it caches the encryption key for future use.
-
-    Args:
-        password (str): The password to use for unlocking the vault
-
-    Returns:
-        dict: The decrypted vault contents
-
-    Raises:
-        ValueError: If the password is incorrect or the vault cannot be unlocked
-    """
-    data = read_secure_file(VAULT_FILE)
-    salt = data[:16]
-    nonce = data[16:28]
-    encrypted = data[28:]
-
-    key = derive_key(
-        password.encode(),
-        salt,
-    )
-    aesgcm = AESGCM(key)
-
-    try:
-        aesgcm.decrypt(
-            nonce,
-            encrypted,
-            None,
-        )
-        write_secure_file(
-            KEY_CACHE_FILE,
-            key,
-        )
-    except Exception as e:
-        raise ValueError("Failed to unlock vault. Check your password.") from e
-
-
-def lock_vault():
-    """
-    Lock the vault by removing the cached key and clearing the vault file.
-
-    This function securely deletes the cached encryption key and clears the contents
-    of the vault file, effectively locking it until unlocked again with a password.
-
-    Returns:
-        None
-
-    Side effects:
-        - Deletes the KEY_CACHE_FILE
-        - Clears the VAULT_FILE contents
-    """
-    if KEY_CACHE_FILE.exists():
+        Returns:
+            None
+        """
         delete_secure_file(KEY_CACHE_FILE)
 
+    @staticmethod
+    def _load_key() -> bytes | None:
+        """
+        Retrieve the cached encryption key.
 
-def add_credential(
-    credential: Credential,
-):
-    """
-    Add a new credential to the vault.
+        Returns:
+            bytes | None: The cached encryption key if it exists, otherwise None
+        """
+        key = read_secure_file(KEY_CACHE_FILE)
+        return key if key else None
 
-    This function appends a new credential to the existing vault contents.
-    It reads the current vault, adds the new credential, and writes the updated
-    vault back to the file.
+    @staticmethod
+    def _save_key(key: bytes):
+        """
+        Cache the derived encryption key securely.
 
-    Args:
-        credential (Credential): The credential object to add
+        Args:
+            key (bytes): The derived encryption key
+        """
+        write_secure_file(KEY_CACHE_FILE, key)
 
-    Returns:
-        None
+    @staticmethod
+    def _generate_salt() -> bytes:
+        """
+        Generate a cryptographically secure random salt.
 
-    Raises:
-        ValueError: If the vault is not unlocked or if there is an error writing to the vault
-    """
+        Returns:
+            bytes: A 16-byte cryptographically secure random salt
+        """
+        return os.urandom(16)
 
-    data = read_secure_file(VAULT_FILE)
-    salt = data[:16]
-    nonce = data[16:28]
-    encrypted = data[28:]
+    @staticmethod
+    def _generate_nonce() -> bytes:
+        """
+        Generate a cryptographically secure random nonce.
 
-    key = read_secure_file(KEY_CACHE_FILE)
-    aesgcm = AESGCM(key)
+        Returns:
+            bytes: A 12-byte cryptographically secure random nonce
+        """
+        return os.urandom(12)
 
-    try:
-        decrypted_data = aesgcm.decrypt(
-            nonce,
-            encrypted,
-            None,
+    def _decrypt_data(self, key: bytes):
+        """
+        Decrypt the encrypted vault data using AES-GCM and the derived encryption key.
+
+        Args:
+            key (bytes): The derived encryption key
+
+        Returns:
+            None
+        """
+        self.data = VaultData(
+            **json.loads(AESGCM(key).decrypt(self.nonce, self.encrypted_data, None).decode())
         )
-        vault_contents = json.loads(decrypted_data.decode())
-    except Exception as e:
-        raise ValueError("Failed to read vault contents.") from e
+        for cred_type, cred_type_values in json.loads(
+            AESGCM(key).decrypt(self.nonce, self.encrypted_data, None).decode()
+        ).items():
+            setattr(
+                self.data,
+                cred_type,
+                {cred_name: Credential(**cred) for cred_name, cred in cred_type_values.items()},
+            )
 
-    vault_contents[credential.name] = credential.model_dump()
+    def _derive_key(self, password: str) -> bytes:
+        """
+        Derives an encryption key the password using PBKDF2.
 
-    new_data = json.dumps(vault_contents).encode()
-    encrypted_new_data = aesgcm.encrypt(
-        nonce,
-        new_data,
-        None,
-    )
-    write_secure_file(
-        VAULT_FILE,
-        salt + nonce + encrypted_new_data,
-    )
+        Args:
+            password (str): The password to derive the encryption key from
 
-
-def get_credential(
-    name: str,
-) -> Credential | None:
-    """
-    Retrieve a credential from the vault by name.
-
-    This function reads the vault contents, decrypts them, and returns the
-    specified credential as a Credential object.
-
-    Args:
-        name (str): The name of the credential to retrieve
-
-    Returns:
-        Credential: The requested credential object
-        None: If the credential does not exist in the vault
-
-    Raises:
-        ValueError: If the vault is not unlocked or if the credential does not exist
-    """
-    data = read_secure_file(VAULT_FILE)
-    nonce = data[16:28]
-    encrypted = data[28:]
-
-    key = read_secure_file(KEY_CACHE_FILE)
-    aesgcm = AESGCM(key)
-
-    try:
-        decrypted_data = aesgcm.decrypt(
-            nonce,
-            encrypted,
-            None,
+        Returns:
+            bytes: The derived key of length KEY_LENGTH bytes
+        """
+        kdf = PBKDF2HMAC(
+            algorithm=hashes.SHA256(),
+            length=KEY_LENGTH,
+            salt=self.salt,
+            iterations=KEY_DERIVATION_ITERATIONS,
+            backend=default_backend(),
         )
-        vault_contents = json.loads(decrypted_data.decode())
-    except Exception as e:
-        raise ValueError("Failed to read vault contents.") from e
+        return kdf.derive(password.encode())
 
-    if name not in vault_contents:
-        return None
+    def _encrypt_data(self, key: bytes):
+        """
+        Encrypt the current vault data using AES-GCM and the derived encryption key.
 
-    return Credential(**vault_contents[name])
+        Args:
+            key (bytes): The derived encryption key
 
-
-def list_credentials() -> list[Credential]:
-    """
-    List all credentials stored in the vault.
-
-    This function retrieves all credentials from the vault, decrypts them,
-    and returns a list of Credential objects.
-
-    Returns:
-        list[Credential]: A list of all credentials in the vault
-
-    Raises:
-        ValueError: If the vault is not unlocked or if there is an error reading the vault
-    """
-    data = read_secure_file(VAULT_FILE)
-    nonce = data[16:28]
-    encrypted = data[28:]
-
-    key = read_secure_file(KEY_CACHE_FILE)
-    aesgcm = AESGCM(key)
-
-    try:
-        decrypted_data = aesgcm.decrypt(
-            nonce,
-            encrypted,
-            None,
+        Returns:
+            None
+        """
+        self.encrypted_data = AESGCM(key).encrypt(
+            self.nonce, self.data.model_dump_json().encode(), None
         )
-        vault_contents = json.loads(decrypted_data.decode())
-    except Exception as e:
-        raise ValueError("Failed to read vault contents.") from e
 
-    return [Credential(**cred) for cred in vault_contents.values()]
+    def _key_is_valid(self, key: bytes) -> bool:
+        """
+        Validate whether the provided encryption key correctly decrypts the vault.
 
+        Args:
+            key (bytes): The derived encryption key
 
-def delete_credential(
-    name: str,
-) -> bool:
-    """
-    Delete a credential from the vault by name.
+        Returns:
+            bool: True if the key is valid, False otherwise
+        """
+        try:
+            AESGCM(key).decrypt(self.nonce, self.encrypted_data, None)
+            return True
+        except Exception:
+            return False
 
-    This function removes the specified credential from the vault contents
-    and updates the vault file accordingly.
+    def _store_vault_to_disk(self):
+        """
+        Persist the current encrypted vault state to disk.
 
-    Args:
-        name (str): The name of the credential to delete
-
-    Returns:
-        bool: True if the credential was deleted, False if it was not found
-
-    Raises:
-        ValueError: If the vault is not unlocked or if there is an error reading/writing the vault
-    """
-    data = read_secure_file(VAULT_FILE)
-    nonce = data[16:28]
-    encrypted = data[28:]
-
-    key = read_secure_file(KEY_CACHE_FILE)
-    aesgcm = AESGCM(key)
-
-    try:
-        decrypted_data = aesgcm.decrypt(
-            nonce,
-            encrypted,
-            None,
+        Returns:
+            None
+        """
+        write_secure_file(
+            VAULT_FILE,
+            self.salt + self.nonce + self.encrypted_data,
         )
-        vault_contents = json.loads(decrypted_data.decode())
-    except Exception as e:
-        raise ValueError("Failed to read vault contents.") from e
 
-    if name not in vault_contents:
-        return False
+    def create(self, password: str) -> Self:
+        """
+        Create and initialize a new encrypted vault using the provided password.
 
-    del vault_contents[name]
+        Args:
+            password (str): The password to derive the encryption key from
 
-    new_data = json.dumps(vault_contents).encode()
-    encrypted_new_data = aesgcm.encrypt(
-        nonce,
-        new_data,
-        None,
-    )
+        Returns:
+            Self: The Vault instance (for chaining or reuse).
 
-    write_secure_file(
-        VAULT_FILE,
-        data[:16] + nonce + encrypted_new_data,
-    )
-
-    return True
-
-
-def update_credential(
-    credential: UpdateCredential,
-) -> bool:
-    """
-    Update an existing credential in the vault.
-
-    This function modifies the specified credential in the vault contents
-    and writes the updated contents back to the vault file.
-
-    Args:
-        credential (Credential): The updated credential object
-
-    Returns:
-        bool: True if the credential was updated, False if it was not found
-
-    Raises:
-        ValueError: If the vault is not unlocked or if there is an error reading/writing the vault
-    """
-    data = read_secure_file(VAULT_FILE)
-    nonce = data[16:28]
-    encrypted = data[28:]
-
-    key = read_secure_file(KEY_CACHE_FILE)
-    aesgcm = AESGCM(key)
-
-    try:
-        decrypted_data = aesgcm.decrypt(
-            nonce,
-            encrypted,
-            None,
+        Side Effects:
+            - Creates the Vecna directory if it does not exist
+            - Overwrites the existing vault
+        """
+        VECNA_DIR.mkdir(
+            parents=True,
+            exist_ok=True,
         )
-        vault_contents = json.loads(decrypted_data.decode())
-    except Exception as e:
-        raise ValueError("Failed to read vault contents.") from e
+        self.salt = self._generate_salt()
+        self.nonce = self._generate_nonce()
+        key = self._derive_key(password)
+        self._encrypt_data(key)
+        self._store_vault_to_disk()
+        return self
 
-    if credential.new_name is not None:
-        vault_contents[credential.new_name] = vault_contents.pop(credential.name)
-        credential.name = credential.new_name
-        credential.new_name = None
+    def load(self, raise_no_key: bool = True) -> Self:
+        """
+        Load vault metadata (salt, nonce, encrypted data) from disk and decrypt if
+        a cached key is available.
 
-    for (
-        key,
-        value,
-    ) in credential.model_dump().items():
-        if value is not None:
-            vault_contents[credential.name][key] = value
+        If no key is found and `raise_no_key` is True, a ValueError is raised.
 
-    new_data = json.dumps(vault_contents).encode()
-    encrypted_new_data = aesgcm.encrypt(
-        nonce,
-        new_data,
-        None,
-    )
-    write_secure_file(
-        VAULT_FILE,
-        data[:16] + nonce + encrypted_new_data,
-    )
+        Args:
+            raise_no_key (bool): Whether to raise an exception if no cached key
+            is found (default: True)
 
-    return True
+        Returns:
+            Self: The Vault instance (for chaining or reuse).
+
+        Raises:
+            ValueError: If no cached key is found and raise_no_key is True
+            FileNotFoundError: If the vault file does not exist
+        """
+        vault_file_data = read_secure_file(VAULT_FILE)
+        self.salt = vault_file_data[:16]
+        self.nonce = vault_file_data[16:28]
+        self.encrypted_data = vault_file_data[28:]
+        key = self._load_key()
+
+        if key is None:
+            if raise_no_key:
+                raise ValueError("Please unlock the vault first.")
+            return self
+
+        self._decrypt_data(key)
+        return self
+
+    def lock(self) -> Self:
+        """
+        Locks the vault by removing the cached key.
+
+        Returns:
+            Self: The Vault instance (for chaining or reuse).
+        """
+        self._delete_key()
+        return self
+
+    def unlock(self, password: str) -> Self:
+        """
+        Unlock the vault by deriving and caching the encryption key.
+
+        Args:
+            password (str): The password to derive the encryption key from
+
+        Returns:
+            Self: The Vault instance (for chaining or reuse).
+
+        Raises:
+            ValueError: If the password is incorrect or vault decryption fails
+        """
+        key = self._derive_key(password)
+        if not self._key_is_valid(key):
+            raise ValueError("Invalid password.")
+        self._save_key(key)
+        return self
+
+    def add_credential(self, credential: Credential):
+        """
+        Add a new credential to the decrypted vault and persist the change.
+
+        Args:
+            credential (Credential): The credential object to add
+
+        Returns:
+            None
+
+        Raises:
+            KeyError: If a credential with the same name already exists
+        """
+        if credential.name in self.data.credentials:
+            raise KeyError(f"Credential '{credential.name}' already exists.")
+
+        self.data.credentials[credential.name] = credential
+        key = self._load_key()
+        self._encrypt_data(key)
+        self._store_vault_to_disk()
+
+    def get_credential(self, name: str) -> Credential | None:
+        """
+        Retrieves a credential object from the vault by its name.
+
+        Args:
+            name (str): The name of the credential to retrieve.
+
+        Returns:
+        Credential | None: The credential if found, otherwise None.
+        """
+        if name not in self.data.credentials:
+            return None
+        return self.data.credentials[name]
+
+    def list_credentials(self) -> list[Credential]:
+        """
+        List all credentials stored in the vault.
+
+        Returns:
+            list[Credential]: A list of all Credential objects currently stored in the vault.
+        """
+        return list(self.data.credentials.values())
+
+    def delete_credential(self, name: str):
+        """
+        Deletes a credential from the vault.
+
+        Args:
+            name (str): The name of the credential to delete.
+
+        Raises:
+            KeyError: If the credential with the specified name does not exist in the vault.
+        """
+        if name not in self.data.credentials:
+            raise KeyError(f"Credential '{name}' does not exist.")
+        del self.data.credentials[name]
+        key = self._load_key()
+        self._encrypt_data(key)
+        self._store_vault_to_disk()
+
+    def update_credential(self, credential: UpdateCredential):
+        """
+        Update an existing credential in the vault.
+
+        Args:
+            credential (Credential): The updated credential object
+
+        Raises:
+            KeyError: If the credential with the specified name does not exist in the vault.
+        """
+
+        if credential.name not in self.data.credentials:
+            raise KeyError(f"Credential '{credential.name}' does not exist.")
+
+        if credential.new_name is not None:
+            self.data.credentials[credential.new_name] = self.data.credentials.pop(credential.name)
+            credential.name = credential.new_name
+            credential.new_name = None
+
+        for (
+            key,
+            value,
+        ) in credential.model_dump().items():
+            if value is not None:
+                setattr(self.data.credentials[credential.name], key, value)
+
+        key = self._load_key()
+        self._encrypt_data(key)
+        self._store_vault_to_disk()
+
+    def exists(self) -> bool:
+        """
+        Check if the vault file exists.
+
+        Returns:
+            bool: True if the vault file exists, False otherwise
+        """
+        try:
+            vault = read_secure_file(VAULT_FILE)
+        except FileNotFoundError:
+            return False
+        return vault is not None and len(vault) > 0

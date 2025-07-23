@@ -14,5 +14,5 @@ app.add_typer(unlock_app)
 app.add_typer(lock_app)
 app.add_typer(
     credentials_app,
-    name="credentials",
+    name="creds",
 )

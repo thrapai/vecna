@@ -1,9 +1,5 @@
 import json
-from dataclasses import (
-    asdict,
-    dataclass,
-    field,
-)
+from dataclasses import asdict, dataclass, field
 from datetime import datetime
 
 
@@ -45,12 +41,8 @@ class Credential:
     """
 
     name: str = field(metadata={"description": "The name of the credential."})
-    username: str = field(
-        metadata={"description": "The username associated with the credential."}
-    )
-    password: str = field(
-        metadata={"description": "The password associated with the credential."}
-    )
+    username: str = field(metadata={"description": "The username associated with the credential."})
+    password: str = field(metadata={"description": "The password associated with the credential."})
     notes: str | None = field(
         default="",
         metadata={"description": "Optional notes associated with the credential."},
@@ -116,3 +108,31 @@ class UpdateCredential(Credential):
         default=None,
         metadata={"description": "New tags for the credential, if being updated."},
     )
+
+
+@dataclass
+class VaultData:
+    credentials: dict[str, Credential] = field(
+        default_factory=dict, metadata={"description": "The decrypted credential data."}
+    )
+
+    def model_dump_json(self, indent: int = 2) -> str:
+        """
+        Dumps the vault as a JSON string with indentation.
+
+        Args:
+            indent (int): The number of spaces to use for indentation.
+
+        Returns:
+            str: The JSON representation of the vault.
+        """
+        return json.dumps(asdict(self), indent=indent)
+
+    def model_dump(self) -> dict:
+        """
+        Dumps the vault as a dictionary.
+
+        Returns:
+            dict: The dictionary representation of the vault.
+        """
+        return asdict(self)

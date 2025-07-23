@@ -1,7 +1,7 @@
 import typer
 
 from ..core.session import end_session
-from ..core.vault import lock_vault
+from ..core.vault import Vault
 
 app = typer.Typer()
 
@@ -9,11 +9,11 @@ app = typer.Typer()
 @app.command()
 def lock():
     """
-    🔒🏰Secures vault and end active session.
+    Lock the vault and end the active session.
     """
-    lock_vault()
+    Vault().lock()
     end_session()
     typer.secho(
-        "🔒🏰 The vault is now sealed with silence...",
+        "Vault locked and session ended.",
         fg=typer.colors.GREEN,
     )

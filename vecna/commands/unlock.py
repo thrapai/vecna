@@ -1,7 +1,7 @@
 import typer
 
 from ..core.session import create_session
-from ..core.vault import unlock_vault
+from ..core.vault import Vault
 
 app = typer.Typer()
 
@@ -9,22 +9,21 @@ app = typer.Typer()
 @app.command()
 def unlock():
     """
-    🔓📖 Unlock the encrypted vault and begin your session.
+    Unlock the encrypted vault and begin a session.
     """
-    typer.echo("🧙 The Whispered One demands your incantation...")
     master = typer.prompt(
-        "Speak thy master incantation",
+        "Master password",
         hide_input=True,
     )
     try:
-        unlock_vault(master)
+        Vault().load(raise_no_key=False).unlock(master)
         typer.secho(
-            "🔓📖  The seals break. Secrets awaken at Vecna's call.",
+            "Vault unlocked successfully.",
             fg=typer.colors.GREEN,
         )
     except ValueError as e:
         typer.secho(
-            "The runes reject your incantation. Access denied.",
+            "Invalid password. Access denied.",
             fg=typer.colors.RED,
         )
         raise typer.Exit(1) from e
