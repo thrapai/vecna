@@ -1,1 +1,136 @@
-# vecna cli
+# Vecna CLI
+> Vault for Encrypted Credentials, Notes, and Assets. Name inspired by [Vecna](https://forgottenrealms.fandom.com/wiki/Vecna).
+
+Vecna is a secure, extensible command-line vault for managing credentials, secrets, and configuration values. It provides a simple interface for storing, retrieving, and managing sensitive information which are encrypted and stored securely on your local machine.
+
+Built with [Typer](https://typer.tiangolo.com/).
+
+[![Tests](https://github.com/yourorg/vecna/actions/workflows/tests.yml/badge.svg)](https://github.com/yourorg/vecna/actions)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+
+## Table of Contents
+
+- [Features](#features)
+- [Installation](#installation)
+- [Usage](#usage)
+- [Dependencies](#dependencies)
+- [Security](#security)
+- [Changelog](#changelog)
+- [License](#license)
+
+## Features
+
+- **Encrypted Vault**
+  Securely stores credentials, notes, and sensitive data using AES-256-GCM encryption.
+
+- **Master Password Protection**
+  Uses a master password to derive a strong encryption key via PBKDF2 with 200,000 iterations.
+
+- **Credential Management**
+  Easily add, retrieve, update, list, and delete credentials from the command line.
+
+- **Auto-Expiring Sessions**
+  Sessions automatically expire after a configurable timeout (default: 15 minutes), and the vault is re-locked.
+
+- **Clipboard Integration**
+  Passwords can be copied to the clipboard for quick, secure use.
+
+- **Password Generator**
+  Built-in utility to generate secure, customizable passwords on demand.
+
+- **Local-First, No Cloud**
+  All data is stored locally; Vecna performs no network operations and sends nothing externally.
+
+- **Linux-Only Support (for now)**
+  Uses `/dev/shm` for secure key caching; support for other platforms is planned.
+
+## Installation
+
+_WIP_
+
+## Usage
+
+After installation, you can use `vecna` from the command line to manage your secure vault and credentials.
+
+### Help
+
+```bash
+vecna --help
+```
+
+### Initialize Vault
+
+```bash
+vecna init
+```
+
+### Lock/Unlock Vault
+
+```bash
+vecna lock
+vecna unlock
+```
+
+### Add Credential
+
+```bash
+vecna creds add <name> --username <username> --password <password>
+```
+
+### Get Credential
+
+```bash
+vecna creds get <name>
+```
+> By default, this will display the username and copy the password to the clipboard. You can also specify `--password` to display the password in the terminal.
+
+### List Credentials
+
+```bash
+vecna creds list
+```
+
+> By default, this will list all credentials without their passwords.
+
+### Update Credential
+
+```bash
+vecna creds update <name> --password <password>
+```
+
+### Delete Credential
+
+```bash
+vecna creds delete <name>
+```
+
+### Generate Password
+
+```bash
+vecna generate -l <length>
+```
+
+## Dependencies
+
+Vecna is written in Python and uses the following core libraries:
+
+- [`cryptography`](https://pypi.org/project/cryptography/) — encryption and key derivation
+- [`pyperclip`](https://pypi.org/project/pyperclip/) — cross-platform clipboard handling
+- [`Typer`](https://pypi.org/project/typer/) — building the CLI
+- [`rich`](https://pypi.org/project/rich/) — colored CLI output
+
+## Security
+
+See [SECURITY.md](SECURITY.md) for details on how Vecna secures your data, trust assumptions, and key exposure windows.
+
+## Changelog
+
+See [CHANGELOG.md](CHANGELOG.md) for a detailed list of changes and updates.
+
+## Contributing
+
+_WIP_
+
+## License
+
+MIT License
