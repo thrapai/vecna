@@ -1,12 +1,5 @@
+from importlib.metadata import PackageNotFoundError, version
 from pathlib import Path
-
-# -----------------------------
-# Versioning
-# -----------------------------
-try:
-    from importlib.metadata import PackageNotFoundError, version
-except ImportError:
-    from importlib_metadata import PackageNotFoundError, version  # For Python <3.8
 
 
 def get_version() -> str:
