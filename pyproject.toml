@@ -10,6 +10,13 @@ dependencies = [
     "pyperclip"
 ]
 
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "coverage",
+    "pre-commit"
+]
+
 [project.scripts]
 vecna = "vecna.main:app"
 
