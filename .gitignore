@@ -16,6 +16,8 @@ ENV/
 
 # Test artifacts
 .pytest_cache/
+.coverage
+.coverage.*
 
 # Lint and format cache
 .ruff_cache/
