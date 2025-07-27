@@ -5,7 +5,8 @@ Vecna is a secure, extensible command-line vault for managing credentials, secre
 
 Built with [Typer](https://typer.tiangolo.com/).
 
-[![Tests](https://github.com/yourorg/vecna/actions/workflows/tests.yml/badge.svg)](https://github.com/yourorg/vecna/actions)
+[![Test](https://github.com/thrapai/vecna/actions/workflows/test.yml/badge.svg)](https://github.com/thrapai/vecna/actions/workflows/test.yaml)
+[![Coverage](https://codecov.io/gh/thrapai/vecna/branch/master/graph/badge.svg)](https://codecov.io/gh/thrapai/vecna)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
 ## Table of Contents
