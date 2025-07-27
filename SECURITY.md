@@ -20,8 +20,6 @@ Vecna is local-first and makes no outbound network requests. Your secrets never 
 
 > **Note:** Session expiration is enforced lazily. The timer is only checked the next time a command is run. Until then, the session remains active even if 15 minutes have passed.
 
----
-
 ## Trust Assumptions
 
 Vecna assumes the following conditions for secure use:
@@ -31,8 +29,6 @@ Vecna assumes the following conditions for secure use:
 - If the master password or the encrypted vault is lost, the data is unrecoverable.
 - The user understands session expiration is not automatic, and manual locking is encouraged for sensitive environments.
 - **While the encryption key is cached, anyone with sufficient system access may decrypt the vault until the session is explicitly locked or expired by a triggered command.**
-
----
 
 ## Key Exposure Window
 
