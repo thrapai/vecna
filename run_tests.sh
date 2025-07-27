@@ -1,4 +1,6 @@
 #!/bin/bash
 set -e
 
-pytest --doctest-modules tests/ $*
+coverage run -m pytest --doctest-modules tests/ "$@"
+
+coverage report -m
