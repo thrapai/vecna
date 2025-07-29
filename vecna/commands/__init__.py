@@ -1,6 +1,6 @@
 import typer
 
-from .credentials import app as credentials_app
+from .creds import app as credentials_app
 from .generate import app as generate_app
 from .init import app as init_app
 from .lock import app as lock_app
