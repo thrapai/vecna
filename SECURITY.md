@@ -45,5 +45,4 @@ While cached:
 To minimize exposure:
 
 - Always run `vecna lock` when finished using the CLI.
-- Configure shorter session timeouts if needed.
 - Avoid using Vecna in multi-user environments where `/dev/shm` is not isolated.
