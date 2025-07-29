@@ -1,5 +1,6 @@
 import typer
 
+from .alias import app as alias_app
 from .creds import app as credentials_app
 from .generate import app as generate_app
 from .init import app as init_app
@@ -18,3 +19,4 @@ app.add_typer(
     credentials_app,
     name="creds",
 )
+app.add_typer(alias_app, name="alias")

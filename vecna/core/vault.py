@@ -14,7 +14,7 @@ from ..config import (
     VAULT_FILE,
     VECNA_DIR,
 )
-from ..models import Credential, UpdateCredential, VaultData
+from ..models import Alias, Credential, UpdateAlias, UpdateCredential, VaultData
 from ..utils import delete_secure_file, read_secure_file, write_secure_file
 
 
@@ -89,14 +89,15 @@ class Vault:
         self.data = VaultData(
             **json.loads(AESGCM(key).decrypt(self.nonce, self.encrypted_data, None).decode())
         )
-        for cred_type, cred_type_values in json.loads(
-            AESGCM(key).decrypt(self.nonce, self.encrypted_data, None).decode()
-        ).items():
-            setattr(
-                self.data,
-                cred_type,
-                {cred_name: Credential(**cred) for cred_name, cred in cred_type_values.items()},
-            )
+        for data_type, data_values in self.data.model_dump().items():
+            if data_type == "credentials":
+                self.data.credentials = {
+                    cred_name: Credential(**cred) for cred_name, cred in data_values.items()
+                }
+            elif data_type == "aliases":
+                self.data.aliases = {
+                    alias_name: Alias(**alias) for alias_name, alias in data_values.items()
+                }
 
     def _derive_key(self, password: str) -> bytes:
         """
@@ -331,6 +332,97 @@ class Vault:
         ) in credential.model_dump().items():
             if value is not None:
                 setattr(self.data.credentials[credential.name], key, value)
+
+        key = self._load_key()
+        self._encrypt_data(key)
+        self._store_vault_to_disk()
+
+    def add_alias(self, alias: Alias):
+        """
+        Add a new alias to the vault.
+
+        Args:
+            alias (Alias): The alias object to add
+
+        Returns:
+            None
+
+        Raises:
+            KeyError: If an alias with the same name already exists
+        """
+        if alias.name in self.data.aliases:
+            raise KeyError(f"Alias '{alias.name}' already exists.")
+
+        self.data.aliases[alias.name] = alias
+        key = self._load_key()
+        self._encrypt_data(key)
+        self._store_vault_to_disk()
+
+    def get_alias(self, name: str) -> Alias | None:
+        """
+        Retrieves an alias object from the vault by its name.
+
+        Args:
+            name (str): The name of the alias to retrieve.
+
+        Returns:
+            Alias | None: The alias if found, otherwise None.
+        """
+        if name not in self.data.aliases:
+            return None
+        return self.data.aliases[name]
+
+    def list_aliases(self) -> list[Alias]:
+        """
+        List all aliases stored in the vault.
+
+        Returns:
+            list[Alias]: A list of all Alias objects currently stored in the vault.
+        """
+        return list(self.data.aliases.values())
+
+    def delete_alias(self, name: str):
+        """
+        Deletes an alias from the vault.
+
+        Args:
+            name (str): The name of the alias to delete.
+
+        Raises:
+            KeyError: If the alias with the specified name does not exist in the vault.
+        """
+        if name not in self.data.aliases:
+            raise KeyError(f"Alias '{name}' does not exist.")
+        del self.data.aliases[name]
+        key = self._load_key()
+        self._encrypt_data(key)
+        self._store_vault_to_disk()
+
+    def update_alias(self, alias: UpdateAlias):
+        """
+        Update an existing alias in the vault.
+
+        Args:
+            alias (UpdateAlias): The updated alias object
+
+        Raises:
+            KeyError: If the alias with the specified name does not exist in the vault.
+        """
+
+        if alias.name not in self.data.aliases:
+            raise KeyError(f"Alias '{alias.name}' does not exist.")
+
+        if alias.new_name is not None:
+            self.data.aliases[alias.new_name] = self.data.aliases.pop(alias.name)
+            alias.name = alias.new_name
+            alias.new_name = None
+
+        for (
+            key,
+            value,
+        ) in alias.model_dump().items():
+            if value is not None:
+                setattr(self.data.aliases[alias.name], key, value)
 
         key = self._load_key()
         self._encrypt_data(key)
