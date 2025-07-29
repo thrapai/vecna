@@ -1,5 +1,5 @@
 # Vecna CLI
-> Vault for Encrypted Credentials, Notes, and Assets. Name inspired by [Vecna](https://forgottenrealms.fandom.com/wiki/Vecna).
+> Vault for Encrypted Credentials, Notes, and Aliases. Name inspired by [Vecna](https://forgottenrealms.fandom.com/wiki/Vecna).
 
 Vecna is a secure, extensible command-line vault for managing credentials, secrets, and configuration values. It provides a simple interface for storing, retrieving, and managing sensitive information which are encrypted and stored securely on your local machine.
 
@@ -52,12 +52,6 @@ _WIP_
 ## Usage
 
 After installation, you can use `vecna` from the command line to manage your secure vault and credentials.
-
-### Help
-
-```bash
-vecna --help
-```
 
 ### Initialize Vault
 
