@@ -30,6 +30,9 @@ Vecna is a secure, developer-focused command-line vault for storing credentials,
 - **Credential Management**
   Easily add, retrieve, update, list, and delete credentials from the command line.
 
+- **Alias Management**
+  Create aliases for frequently used commands, making it easier to manage complex or sensitive operations.
+
 - **Auto-Expiring Sessions**
   Sessions automatically expire after a configurable timeout (default: 15 minutes), and the vault is re-locked.
 
@@ -47,7 +50,12 @@ Vecna is a secure, developer-focused command-line vault for storing credentials,
 
 ## Installation
 
-_WIP_
+Vecna can be easily installed via pipx.
+
+```bash
+python3 -m pip install --user pipx
+pipx install vecna
+```
 
 ## Usage
 

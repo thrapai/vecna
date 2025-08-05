@@ -1,6 +1,8 @@
 [project]
 name = "vecna"
 version = "0.1.0"
+readme = "README.md"
+license = {text = "MIT"}
 description = "Vault for Encrypted Credentials, Notes, and Aliases"
 authors = [{ name = "Thomas Rapai", email = "th.rapai@hotmail.com" }]
 requires-python = ">=3.10"
