@@ -7,6 +7,7 @@ Vecna is a secure, developer-focused command-line vault for storing credentials,
 
 [![Test](https://github.com/thrapai/vecna/actions/workflows/test.yaml/badge.svg)](https://github.com/thrapai/vecna/actions/workflows/test.yaml)
 [![Coverage](https://codecov.io/gh/thrapai/vecna/branch/master/graph/badge.svg)](https://codecov.io/gh/thrapai/vecna)
+[![PyPI version](https://img.shields.io/pypi/v/vecna.svg)](https://pypi.org/project/vecna/)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
 ## Table of Contents
