@@ -13,7 +13,7 @@ dependencies = [
 [project.optional-dependencies]
 dev = [
     "pytest",
-    "coverage",
+    "pytest-cov",
     "pre-commit"
 ]
 
