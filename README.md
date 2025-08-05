@@ -137,7 +137,7 @@ See [CHANGELOG.md](CHANGELOG.md) for a detailed list of changes and updates.
 
 ## Contributing
 
-_WIP_
+See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines on how to contribute to Vecna.
 
 ## License
 
