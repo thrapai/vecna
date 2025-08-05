@@ -1,4 +1,4 @@
-name: Test and Coverage
+name: Test
 
 on:
   push:
@@ -33,3 +33,4 @@ jobs:
         uses: codecov/codecov-action@v3
         with:
           files: coverage.xml
+          fail_ci_if_error: true
