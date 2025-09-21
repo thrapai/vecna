@@ -5,6 +5,8 @@ Vault for Encrypted Credentials, Notes, and Aliases.
 
 Vecna is a secure, developer-focused command-line vault for storing credentials, secrets, and frequently used commands. Whether you're managing API keys, long commands with embedded secrets, or sensitive notes, Vecna provides a simple, encrypted solution that keeps your data safe and easily accessible.
 
+![Vecna Logo](./assets/logo.png)
+
 [![Test](https://github.com/thrapai/vecna/actions/workflows/test.yaml/badge.svg)](https://github.com/thrapai/vecna/actions/workflows/test.yaml)
 [![Coverage](https://codecov.io/gh/thrapai/vecna/branch/master/graph/badge.svg)](https://codecov.io/gh/thrapai/vecna)
 [![PyPI version](https://img.shields.io/pypi/v/vecna.svg)](https://pypi.org/project/vecna/)
