@@ -2,7 +2,7 @@
 name = "vecna"
 version = "0.1.2"
 readme = "README.md"
-license = {text = "MIT"}
+license = "MIT"
 description = "Vault for Encrypted Credentials, Notes, and Aliases"
 authors = [{ name = "Thomas Rapai", email = "th.rapai@hotmail.com" }]
 requires-python = ">=3.10"
@@ -11,6 +11,10 @@ dependencies = [
     "cryptography",
     "pyperclip"
 ]
+
+[tool.setuptools.packages.find]
+include = ["vecna*"]
+exclude = ["assets*"]
 
 [project.optional-dependencies]
 dev = [
